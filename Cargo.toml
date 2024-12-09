@@ -8,3 +8,4 @@ coolfindpattern = { version = "0.1" }
 log = "0.4"
 simplelog = "0.12"
 thiserror = "2"
+windows-registry = "0.3"

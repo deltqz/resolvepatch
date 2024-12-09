@@ -1,7 +1,6 @@
 use coolfindpattern::pattern;
 use simplelog::Config;
-
-const RESOLVE_FOLDER: &'static str = r#"C:\Program Files\Blackmagic Design\DaVinci Resolve"#;
+use windows_registry::CURRENT_USER;
 
 const PATCHES: &'static [(&'static [Option<u8>], &'static [u8])] = &[
     (
@@ -36,8 +35,19 @@ enum PatchError {
 }
 
 fn patch() -> Result<(), PatchError> {
+    let key = CURRENT_USER.open(r#"Software\Classes\ResolveBinFile\shell\open\command"#).map_err(|e| {
+        log::error!("read registry key error: {e:#?}");
+        PatchError::ResolveNotFound
+    })?.get_string("").map_err(|e| {
+        log::error!("read registry value error: {e:#?}");
+        PatchError::ResolveNotFound
+    })?;
 
-    let Ok(mut data) = std::fs::read(&format!("{RESOLVE_FOLDER}\\Resolve.exe")) else {
+    let (key, _) = key.rsplit_once(' ').ok_or(PatchError::ResolveNotFound)?;
+
+    let resolve_path = &key[1..key.len()-1];
+
+    let Ok(mut data) = std::fs::read(resolve_path) else {
         Err(PatchError::ResolveNotFound)?
     };
 
@@ -68,13 +78,13 @@ fn patch() -> Result<(), PatchError> {
     }
 
     let Ok(_) = std::fs::copy(
-        &format!("{RESOLVE_FOLDER}\\Resolve.exe"),
-        &format!("{RESOLVE_FOLDER}\\Resolve.exe.bak"),
+        resolve_path,
+        &format!("{resolve_path}.bak"),
     ) else {
         Err(PatchError::BackupFailed)?
     };
 
-    let Ok(_) = std::fs::write(&format!("{RESOLVE_FOLDER}\\Resolve.exe"), data) else {
+    let Ok(_) = std::fs::write(resolve_path, data) else {
         Err(PatchError::WriteFailed)?
     };
 
@@ -91,7 +101,7 @@ fn main() {
             log::info!("successfully patched!");
         }
         Err(e) => {
-            log::error!("failed to patch resolve: {e:#?}")
+            log::error!("failed to patch resolve: {e}")
         }
     }
 
