@@ -8,4 +8,4 @@ Get the exe from: https://github.com/deltqz/resolvepatch/releases
 rustup install nightly
 cargo +nightly build
 ```
-If you installed Davinci resolve on `C:\Program Files\`, you might need to run the exe as administrator because of how Windows handles permisions for things installed in there.
+If you installed Davinci Resolve on `C:\Program Files\`, you might need to run the exe as administrator because of how Windows handles permisions for things installed in there.
